@@ -3450,6 +3450,204 @@ body.cart-bar-open { padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px
   .order-modal-backdrop { animation: none; }
 }
 
+
+
+/* ================================================================
+   FINAL HERO FIX — desktop overlap + complete mobile hero controls
+   Added by ChatGPT
+   ================================================================ */
+.hero-product{
+  isolation:isolate !important;
+  overflow:hidden !important;
+  min-width:0 !important;
+}
+.hero-product .hp-img,
+.hero-product .hp-text{
+  position:relative !important;
+  z-index:3 !important;
+  min-width:0 !important;
+}
+.hero-product .hp-text{
+  padding-left:132px !important; /* reserve fixed safe zone for discount badge on desktop */
+}
+.hero-product .hp-eyebrow,
+.hero-product .hp-name,
+.hero-product .hp-desc,
+.hero-product .hp-price,
+.hero-product .hp-cart-row{
+  max-width:100% !important;
+}
+.hero-product .hp-name{
+  overflow-wrap:anywhere !important;
+  word-break:normal !important;
+}
+.hero-product .hp-badge{
+  z-index:12 !important;
+  pointer-events:none !important;
+}
+.hero-product .hp-cart-row{
+  justify-content:flex-start !important;
+  align-items:center !important;
+}
+.hero-product .hp-qty-control{
+  direction:ltr !important;
+  min-width:152px !important;
+  flex:0 0 152px !important;
+  justify-content:space-between !important;
+}
+.hero-product .hp-qty-control [data-cart-remove]{ order:1 !important; }
+.hero-product .hp-qty-control .hp-qty-val{ order:2 !important; flex:1 1 auto !important; min-width:44px !important; }
+.hero-product .hp-qty-control [data-cart-add]{ order:3 !important; }
+
+@media (min-width:701px){
+  .hero-product{
+    grid-template-columns:minmax(250px,300px) minmax(0,1fr) !important;
+    column-gap:34px !important;
+  }
+  .hero-product .hp-img{
+    align-self:center !important;
+    justify-self:stretch !important;
+    max-width:300px !important;
+  }
+}
+
+@media (max-width:700px){
+  .hero-product{
+    display:flex !important;
+    flex-direction:column !important;
+    align-items:stretch !important;
+    padding:18px 16px 24px !important;
+    gap:14px !important;
+    border-radius:20px !important;
+    overflow:hidden !important;
+  }
+  .hero-product::after{ animation:none !important; }
+  .hero-product .hp-img{
+    order:1 !important;
+    width:min(78vw, 320px) !important;
+    max-width:320px !important;
+    height:auto !important;
+    aspect-ratio:1/1 !important;
+    max-height:none !important;
+    margin:0 auto 4px !important;
+    flex:0 0 auto !important;
+  }
+  .hero-product .hp-img .slot-img,
+  .hero-product .hp-img img,
+  .hero-product .hp-img .pi-img-wrap img{
+    width:90% !important;
+    height:90% !important;
+    max-width:90% !important;
+    max-height:90% !important;
+    object-fit:contain !important;
+  }
+  .hero-product .hp-text{
+    order:2 !important;
+    width:100% !important;
+    padding:0 !important;
+    text-align:right !important;
+    gap:10px !important;
+  }
+  .hero-product .hp-eyebrow{
+    font-size:12px !important;
+    letter-spacing:.16em !important;
+    white-space:normal !important;
+    color:var(--gold) !important;
+  }
+  .hero-product .hp-name{
+    font-size:30px !important;
+    line-height:1.22 !important;
+    -webkit-line-clamp:2 !important;
+    overflow:hidden !important;
+    display:-webkit-box !important;
+    -webkit-box-orient:vertical !important;
+  }
+  .hero-product .hp-desc{
+    font-size:16px !important;
+    line-height:1.35 !important;
+    max-width:100% !important;
+    color:rgba(244,236,219,.82) !important;
+  }
+  .hero-product .hp-price{
+    margin-top:4px !important;
+    padding-top:14px !important;
+    gap:12px !important;
+    justify-content:flex-start !important;
+  }
+  .hero-product .hp-new{ font-size:52px !important; line-height:1 !important; }
+  .hero-product .hp-new .cur{ font-size:20px !important; }
+  .hero-product .hp-old{ font-size:20px !important; }
+  .hero-product .hp-cart-row{
+    margin-top:12px !important;
+    width:100% !important;
+    display:flex !important;
+    flex-direction:row-reverse !important;
+    justify-content:space-between !important;
+    align-items:center !important;
+    gap:12px !important;
+    flex-wrap:nowrap !important;
+  }
+  .hero-product .hp-add-label{
+    display:inline-flex !important;
+    flex:1 1 auto !important;
+    min-width:0 !important;
+    font-size:15px !important;
+    color:rgba(244,236,219,.78) !important;
+    white-space:nowrap !important;
+    justify-content:flex-start !important;
+  }
+  .hero-product .hp-qty-control{
+    min-width:148px !important;
+    flex:0 0 148px !important;
+    height:48px !important;
+    border-radius:999px !important;
+    overflow:hidden !important;
+    background:rgba(255,255,255,.10) !important;
+  }
+  .hero-product .hp-qty-btn{
+    flex:0 0 48px !important;
+    width:48px !important;
+    height:48px !important;
+    display:flex !important;
+    opacity:1 !important;
+    visibility:visible !important;
+  }
+  .hero-product .hp-qty-val{
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    min-width:44px !important;
+    font-size:19px !important;
+    color:#FFD166 !important;
+  }
+  .hero-product .hp-badge{
+    width:78px !important;
+    height:78px !important;
+    top:16px !important;
+    left:calc(50% - min(39vw,160px) + 8px) !important;
+    animation:none !important;
+  }
+  .hero-product .hp-badge .l2{ font-size:28px !important; }
+  .hero-product .hp-badge .l1,
+  .hero-product .hp-badge .l3{ font-size:9px !important; }
+  .smart-cart-bar{
+    padding-left:12px !important;
+    padding-right:12px !important;
+  }
+  .smart-cart-inner{
+    max-width:100% !important;
+    display:grid !important;
+    grid-template-columns:1fr auto !important;
+    align-items:center !important;
+  }
+  .smart-cart-summary .sc-count{ font-size:12px !important; }
+  .smart-cart-summary .sc-total{ font-size:18px !important; }
+  .smart-cart-cta{
+    white-space:nowrap !important;
+    font-size:14px !important;
+    padding:12px 14px !important;
+  }
+}
 </style>
 </head>
 <body>
