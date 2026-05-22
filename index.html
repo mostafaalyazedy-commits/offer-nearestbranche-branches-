@@ -1114,13 +1114,21 @@ body {
     0 0 0 4px rgba(230,57,70,0.25),
     0 20px 50px rgba(230,57,70,0.45),
     inset 0 1px 0 rgba(255,255,255,0.2) !important;
-  animation: burstSpin 30s linear infinite;
+  transform: rotate(-14deg) !important;
+  animation: burstEntrance 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
   filter: drop-shadow(0 0 20px rgba(230,57,70,0.4));
 }
 
-@keyframes burstSpin {
-  0% { transform: rotate(-14deg); }
-  100% { transform: rotate(346deg); }
+@keyframes burstEntrance {
+  from { transform: rotate(-14deg) scale(0.55); opacity: 0; }
+  to   { transform: rotate(-14deg) scale(1);    opacity: 1; }
+}
+
+@media print {
+  .cover-burst { animation: none !important; transform: rotate(-14deg) !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cover-burst { animation: none !important; }
 }
 
 /* Cover callout chips — glass upgrade */
@@ -3555,6 +3563,98 @@ body.cart-bar-open { padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px
 const SHEET_ID          = "1CE6y7pu2VwfFpt7zvewJ9p5LE2QL-FVAtoV5oB2Fbjo";
 const PRODUCTS_API_URL  = `https://opensheet.elk.sh/${SHEET_ID}/Sheet1`;
 const CATEGORIES_API_URL= `https://opensheet.elk.sh/${SHEET_ID}/Categories`;
+const SETTINGS_API_URL  = `https://opensheet.elk.sh/${SHEET_ID}/Magazine_Settings`;
+
+/* ================================================================
+   MAGAZINE SETTINGS — key/value from Google Sheet (optional)
+   Falls back to DEFAULT_SETTINGS if sheet missing or field empty.
+   ================================================================ */
+const DEFAULT_SETTINGS = {
+  /* Brand */
+  magazine_page_title:    "مجلة عروض أوشن",
+  brand_name_ar:          "صيدلية أوشن",
+  brand_name_en:          "Ocean Pharmacy",
+  brand_short_ar:         "أوشن",
+  brand_ring_letter:      "O",
+  /* Cover */
+  cover_tagline:          "صحّة · جمال · عناية",
+  cover_headline_main:    "عروض",
+  cover_headline_accent:  "يونيو",
+  cover_edition_strong:   "JUNE · 2026",
+  cover_edition_sub:      "ISSUE 06 — VOL. 02",
+  cover_sub_text:         "خصم يصل إلى ٦٠٪ على أكثر من ٢٠٠ منتج",
+  cover_stat_branches:    "٨",
+  cover_badge_label_top:  "خصم يصل إلى",
+  cover_badge_number:     "60",
+  cover_badge_suffix:     "%",
+  cover_badge_label_bottom:"على ٢٠٠+ منتج",
+  /* Cover chips */
+  cover_chip_1:           "توصيل ٩٠ دقيقة",
+  cover_chip_2:           "اشتري ٢ واحصل على ١",
+  cover_chip_3:           "خصومات حتى ٦٠٪",
+  cover_chip_4:           "حصري لعملاء أوشن+",
+  /* Validity */
+  valid_from_display:     "١ يونيو",
+  valid_to_display:       "٣٠ يونيو ٢٠٢٦",
+  validity_text:          "صالحة من ١ يونيو إلى ٣٠ يونيو ٢٠٢٦",
+  cover_foot_meta:        "OCEAN PHARMACY · KSA",
+  /* TOC page */
+  toc_page_label:         "INDEX · في هذا العدد",
+  toc_page_title:         "أقسام المجلة",
+  toc_edition_label:      "JUNE 2026 · ISSUE 06",
+  toc_footer_left:        "صالحة من ١ — ٣٠ يونيو ٢٠٢٦",
+  toc_footer_right:       "OCEAN PHARMACY · JUNE ISSUE",
+  /* Toolbar */
+  toolbar_brand_label:    "صيدلية أوشن",
+  toolbar_search_ph:      "بحث عن منتج…",
+  toolbar_refresh_label:  "تحديث العروض",
+  toolbar_print_label:    "تحميل PDF",
+  /* Final page — merged with FINAL_DEFAULTS below */
+  final_page_title_ar:    "اطلب عروضك الآن",
+  final_page_subtitle_ar: "صيدلية أوشن أقرب لك",
+  final_page_headline_ar: "خلينا نوصل طلبك من أقرب فرع",
+  final_page_body_ar:     "تصفح العروض، اختر منتجاتك، وتواصل معنا ليتم توجيه طلبك إلى الفرع الأقرب لك.",
+  cta_1_text:             "اطلب من الفرع الأقرب لك",
+  cta_2_text:             "تعرّف على أقرب فرع لك",
+  cta_3_text:             "اضغط هنا للطلب عبر واتساب",
+  nearest_branch_text:    "اطلب من الفرع الأقرب لك",
+  branch_finder_text:     "تعرّف على أقرب فرع لك",
+  delivery_text:          "نوصل طلبك بسرعة من أقرب فرع متاح",
+  whatsapp_text:          "مرحبًا، أرغب بطلب عروض صيدلية أوشن",
+  footer_terms_ar:        "العروض سارية حتى نفاد الكمية. الصور لأغراض توضيحية.",
+  validity_note_ar:       "صالحة من ١ يونيو إلى ٣٠ يونيو ٢٠٢٦",
+  contact_title_ar:       "تواصل معنا",
+  /* WhatsApp & delivery */
+  customer_service_whatsapp: "966568681275",
+  delivery_radius_km:     "5",
+  /* Cart bar */
+  cart_cta_label:         "اطلب من أقرب فرع إليك",
+};
+
+let MAGAZINE_SETTINGS = {};
+
+function getSetting(key) {
+  const v = MAGAZINE_SETTINGS[key];
+  if (v && String(v).trim()) return String(v).trim();
+  const d = DEFAULT_SETTINGS[key];
+  return (d !== undefined && d !== null) ? String(d) : "";
+}
+
+async function loadMagazineSettings() {
+  try {
+    const res = await fetch(SETTINGS_API_URL);
+    if (!res.ok) throw new Error("Settings sheet not found or empty (" + res.status + ")");
+    const rows = await res.json();
+    rows.forEach(row => {
+      const key   = String(row.key   || "").trim();
+      const value = String(row.value || "").trim();
+      if (key && value) MAGAZINE_SETTINGS[key] = value;
+    });
+    console.log("[Settings] Loaded", Object.keys(MAGAZINE_SETTINGS).length, "keys from Magazine_Settings");
+  } catch (err) {
+    console.warn("[Settings] Using defaults —", err.message);
+  }
+}
 
 // Pagination constants
 const FIRST_PAGE_GRID_COUNT  = 8;   // grid cards on first page (after hero)
@@ -4162,7 +4262,7 @@ function renderFinalPage(s) {
   };
   return `<div class="page-wrap"><section class="page"><div class="final-page">
     <div class="final-head">
-      <div class="brand-row"><span class="ring">O</span><span>صيدلية أوشن</span></div>
+      <div class="brand-row"><span class="ring">O</span><span>${escapeHtml(getSetting('brand_name_ar')||'صيدلية أوشن')}</span></div>
       <div class="meta">CONTACT · ${escapeHtml(s.contact_title_ar||"تواصل معنا")}</div>
     </div>
     <div class="final-title-block">
@@ -4231,7 +4331,7 @@ async function loadMagazine() {
   if (prodResult.status === "rejected") {
     setStatus("تعذّر التحميل","error");
     mount.innerHTML = renderErrorPage("تعذر تحميل العروض حاليًا. يرجى المحاولة لاحقًا.");
-    if (finalMount) { finalMount.innerHTML = renderFinalPage(FINAL_DEFAULTS); applyPageScale(); }
+    if (finalMount) { finalMount.innerHTML = renderFinalPage(buildFinalPageSettings()); applyPageScale(); }
     return;
   }
 
@@ -4243,7 +4343,7 @@ async function loadMagazine() {
   if (!products.length) {
     setStatus("لا توجد منتجات فعّالة","error");
     mount.innerHTML = renderErrorPage("لم يتم العثور على أي منتج فعّال. تأكد أن العمود active مضبوط على TRUE.");
-    if (finalMount) { finalMount.innerHTML = renderFinalPage(FINAL_DEFAULTS); applyPageScale(); }
+    if (finalMount) { finalMount.innerHTML = renderFinalPage(buildFinalPageSettings()); applyPageScale(); }
     return;
   }
 
@@ -4255,7 +4355,7 @@ async function loadMagazine() {
   populateCategoryFilter();
   renderCategoriesMount();
 
-  if (finalMount) { finalMount.innerHTML = renderFinalPage(FINAL_DEFAULTS); }
+  if (finalMount) { finalMount.innerHTML = renderFinalPage(buildFinalPageSettings()); }
   applyPageScale();
 
   const now = new Date().toLocaleTimeString("ar-EG",{hour:"2-digit",minute:"2-digit"});
@@ -4490,10 +4590,10 @@ piObserver.observe(document.body, { childList: true, subtree: true });
    SMART CART — WhatsApp Delivery Branch Ordering System
    ================================================================ */
 
-/* ── Constants ── */
-const DELIVERY_RADIUS_KM = 5;
+/* ── Constants (resolved from Magazine_Settings sheet, with hardcoded fallback) ── */
+const DELIVERY_RADIUS_KM = Number(getSetting("delivery_radius_km")) || 5;
 const BRANCH_SHEET_URL = 'https://opensheet.elk.sh/1grir_i5EwEXcSqES2Ay2IfF0BomtZ12vp-_8ngRMa7E/Sheet1';
-const CS_WHATSAPP = '966568681275'; // Customer Service fallback
+const CS_WHATSAPP = getSetting("customer_service_whatsapp") || '966568681275';
 
 /* ── Cart State ── */
 const CART = new Map(); // id → { id, name_ar, name_en, code, price, old_price, cat, qty }
@@ -4944,7 +5044,125 @@ if (document.readyState !== 'loading') {
 
 /* END SMART CART */
 
-function boot() { wireToolbar(); loadMagazine(); }
+/* ================================================================
+   COVER & STATIC SECTIONS — driven by getSetting()
+   Called after settings are loaded so all text is resolved.
+   ================================================================ */
+function renderCoverAndStaticSections() {
+  /* ── Page title ── */
+  const magTitle = getSetting('magazine_page_title');
+  if (magTitle) document.title = magTitle;
+
+  /* ── Cover page ── */
+  const coverMast = document.querySelector('.cover-mast');
+  if (coverMast) {
+    coverMast.innerHTML = `<span class="ring">${escapeHtml(getSetting('brand_ring_letter'))}</span><span>${escapeHtml(getSetting('brand_short_ar'))}</span>`;
+  }
+  const coverEdition = document.querySelector('.cover-edition');
+  if (coverEdition) {
+    coverEdition.innerHTML = `<strong>${escapeHtml(getSetting('cover_edition_strong'))}</strong>${escapeHtml(getSetting('cover_edition_sub'))}`;
+  }
+  const coverTagline = document.querySelector('.cover-tagline span');
+  if (coverTagline) coverTagline.textContent = getSetting('cover_tagline');
+
+  const coverSub = document.querySelector('.cover-sub');
+  if (coverSub) coverSub.innerHTML = escapeHtml(getSetting('cover_sub_text')).replace(/٦٠٪|60%/g, '<strong>٦٠٪</strong>').replace(/٢٠٠/g, '<strong>٢٠٠</strong>');
+
+  const coverStatBranches = document.querySelector('.cover-stat-row .stat:last-child .n');
+  if (coverStatBranches) coverStatBranches.textContent = getSetting('cover_stat_branches');
+
+  /* Burst badge */
+  const b1 = document.querySelector('.cover-burst .b1');
+  const b2 = document.querySelector('.cover-burst .b2');
+  const b3 = document.querySelector('.cover-burst .b3');
+  if (b1) b1.textContent = getSetting('cover_badge_label_top');
+  if (b2) b2.innerHTML   = `${escapeHtml(getSetting('cover_badge_number'))}<sup>${escapeHtml(getSetting('cover_badge_suffix'))}</sup>`;
+  if (b3) b3.textContent = getSetting('cover_badge_label_bottom');
+
+  /* Cover chips */
+  const chips = document.querySelectorAll('.cover-callouts .chip');
+  const chipSettings = ['cover_chip_1','cover_chip_2','cover_chip_3','cover_chip_4'];
+  chips.forEach((chip, i) => {
+    if (chipSettings[i]) {
+      const icn = chip.querySelector('.icn');
+      const icnHtml = icn ? icn.outerHTML : '';
+      chip.innerHTML = icnHtml + escapeHtml(getSetting(chipSettings[i]));
+    }
+  });
+
+  /* Cover headline */
+  const hl = document.querySelector('.cover-headline');
+  if (hl) hl.innerHTML = `<span>${escapeHtml(getSetting('cover_headline_main'))}</span> <span class="accent">${escapeHtml(getSetting('cover_headline_accent'))}</span>`;
+
+  /* Cover footer */
+  const coverFootDates = document.querySelector('.cover-foot .dates');
+  if (coverFootDates) {
+    const dot = coverFootDates.querySelector('.dot');
+    const dotHtml = dot ? dot.outerHTML : '<span class="dot"></span>';
+    coverFootDates.innerHTML = dotHtml + escapeHtml(getSetting('validity_text'));
+  }
+  const coverFootMeta = document.querySelector('.cover-foot .meta');
+  if (coverFootMeta) coverFootMeta.textContent = getSetting('cover_foot_meta');
+
+  /* ── TOC page static text ── */
+  const tocMono = document.querySelector('.page-head .cat-mono');
+  if (tocMono) tocMono.textContent = getSetting('toc_page_label');
+  const tocH1 = document.querySelector('.page-head h1');
+  if (tocH1) tocH1.textContent = getSetting('toc_page_title');
+  const tocWordmark = document.querySelector('.page-head .h-right .wordmark');
+  if (tocWordmark) tocWordmark.innerHTML = `<span class="wordmark-mark">${escapeHtml(getSetting('brand_ring_letter'))}</span><span>${escapeHtml(getSetting('brand_name_ar'))}</span>`;
+  const tocEd = document.querySelector('.page-head .h-right .ed');
+  if (tocEd) tocEd.textContent = getSetting('toc_edition_label');
+  const tocFootLeft  = document.querySelector('.page-foot span:first-child');
+  if (tocFootLeft)  tocFootLeft.textContent  = getSetting('toc_footer_left');
+  const tocFootRight = document.querySelector('.page-foot span:last-child');
+  if (tocFootRight) tocFootRight.textContent = getSetting('toc_footer_right');
+
+  /* ── Toolbar ── */
+  const toolbarBrand = document.querySelector('.toolbar .brand span:last-child');
+  if (toolbarBrand) toolbarBrand.textContent = getSetting('toolbar_brand_label');
+  const searchInput = document.getElementById('search-input');
+  if (searchInput) searchInput.placeholder = getSetting('toolbar_search_ph');
+  const refreshBtn = document.getElementById('refresh-btn');
+  if (refreshBtn) { const ic = refreshBtn.querySelector('.ic'); refreshBtn.innerHTML = (ic?ic.outerHTML:'<span class="ic">⟳</span>') + `<span>${escapeHtml(getSetting('toolbar_refresh_label'))}</span>`; }
+  const printBtn = document.getElementById('print-btn');
+  if (printBtn)   { const ic = printBtn.querySelector('.ic');   printBtn.innerHTML   = (ic?ic.outerHTML:'<span class="ic">⎙</span>') + `<span>${escapeHtml(getSetting('toolbar_print_label'))}</span>`; }
+
+  /* ── Cart bar CTA label ── */
+  const cartCta = document.getElementById('smart-cart-cta');
+  if (cartCta) {
+    const waIc = cartCta.querySelector('.wa-ic');
+    const waHtml = waIc ? waIc.outerHTML : '';
+    cartCta.innerHTML = waHtml + escapeHtml(getSetting('cart_cta_label'));
+  }
+}
+
+/* Merge MAGAZINE_SETTINGS into FINAL_DEFAULTS keys for renderFinalPage */
+function buildFinalPageSettings() {
+  const finalKeys = [
+    'final_page_title_ar','final_page_subtitle_ar','final_page_headline_ar','final_page_body_ar',
+    'cta_1_text','cta_1_link','cta_2_text','cta_2_link','cta_3_text','cta_3_link',
+    'qr_image_url','whatsapp_number','whatsapp_text','website_url','google_maps_url',
+    'branch_finder_text','nearest_branch_text','delivery_text',
+    'footer_terms_ar','validity_note_ar','contact_title_ar',
+    'contact_phone','contact_whatsapp','contact_website','contact_instagram','contact_tiktok'
+  ];
+  const merged = { ...FINAL_DEFAULTS };
+  finalKeys.forEach(k => {
+    const v = getSetting(k);
+    if (v) merged[k] = v;
+  });
+  return merged;
+}
+
+function boot() {
+  wireToolbar();
+  // Load settings first, then render cover text, then load magazine data
+  loadMagazineSettings().then(() => {
+    renderCoverAndStaticSections();
+    loadMagazine();
+  });
+}
 document.addEventListener("DOMContentLoaded", boot);
 if (document.readyState !== "loading") boot();
 </script>
