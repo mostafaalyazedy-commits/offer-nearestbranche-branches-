@@ -196,7 +196,7 @@ aspect-ratio:auto;
   .hero-product .hp-old { font-family: 'Roboto Mono', monospace; color: rgba(244,236,219,0.6); text-decoration: line-through; text-decoration-color: var(--coral); text-decoration-thickness: 3px; font-size: 28px; }
   .hero-product .hp-new { font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 72px; color: var(--gold); line-height: 0.9; }
   .hero-product .hp-new .cur { font-size: 28px; color: var(--gold); margin-inline-start: 8px; }
-  .hero-product .hp-badge { position: absolute; top: -22px; right: -22px; width: 132px; height: 132px; border-radius: 50%; background: var(--coral); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: rotate(-10deg); font-family: 'Cairo', sans-serif; font-weight: 700; box-shadow: 0 12px 32px rgba(230,57,70,0.5); }
+  .hero-product .hp-badge { position: absolute; top: 16px; left: 16px; right: auto; width: 100px; height: 100px; border-radius: 50%; background: var(--coral); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: rotate(-10deg); font-family: 'Cairo', sans-serif; font-weight: 700; box-shadow: 0 12px 32px rgba(230,57,70,0.5); z-index: 10; }
   .hero-product .hp-badge .l1 { font-size: 14px; letter-spacing: 0.14em; font-weight: 500; opacity: 0.9; }
   .hero-product .hp-badge .l2 { font-size: 48px; line-height: 1; margin-top: 2px; }
   .hero-product .hp-badge .l3 { font-size: 13px; margin-top: 4px; font-weight: 500; opacity: 0.9; }
@@ -384,9 +384,10 @@ aspect-ratio:auto;
     .cover-foot { margin-top: 16px; padding: 14px 16px; }
     .cover-foot .dates { font-size: 16px; }
     .cover-foot .meta { font-size: 11px; }
-    .cover-burst .b2 { font-size: 52px; }
-    .cover-burst .b2 sup { font-size: 22px; }
-    .cover-burst .b1, .cover-burst .b3 { font-size: 11px; }
+    .cover-burst .b2 { font-size: 56px; line-height: 0.88; }
+    .cover-burst .b2 sup { font-size: 24px; }
+    .cover-burst .b1 { font-size: 9px; letter-spacing: 0.01em; }
+    .cover-burst .b3 { font-size: 9px; letter-spacing: 0.01em; margin-top: 4px; }
     .cover-arc, .cover-arc-2, .cover-dots { display: none; }
 
     /* ── PAGE HEADER mobile ── */
@@ -426,8 +427,8 @@ aspect-ratio:auto;
     .hero-product .hp-new .cur { font-size: 18px; }
     .hero-product .hp-old { font-size: 18px; }
     .hero-product .hp-desc { font-size: 14px; }
-    .hero-product .hp-badge { width: 80px; height: 80px; top: -12px; right: -10px; }
-    .hero-product .hp-badge .l2 { font-size: 28px; }
+    .hero-product .hp-badge { width: 72px; height: 72px; top: 10px; left: 10px; right: auto; z-index: 10; }
+    .hero-product .hp-badge .l2 { font-size: 26px; }
     .hero-product .hp-badge .l1, .hero-product .hp-badge .l3 { font-size: 9px; }
     .hero-product .hp-cart-row { margin-top: 18px; }
     .hero-product .hp-qty-control { height: 44px; }
@@ -1387,6 +1388,12 @@ body {
     0 0 0 4px rgba(230,57,70,0.2),
     0 20px 50px rgba(230,57,70,0.5),
     inset 0 1px 0 rgba(255,255,255,0.2) !important;
+  z-index: 10 !important;
+  top: 16px !important;
+  left: 16px !important;
+  right: auto !important;
+  width: 108px !important;
+  height: 108px !important;
   animation: badgeBounce 4s ease-in-out infinite;
 }
 
@@ -3839,9 +3846,9 @@ function renderProductCard(p) {
         </div>
         ${p.save_amount&&String(p.save_amount).trim()!=="0"?`<div class="product-savings"><span>وفر ${escapeHtml(p.save_amount)} ر.س</span><span class="save-lbl">YOU SAVE</span></div>`:""}
         <div class="product-qty-control" data-qty="0" data-cart-id="${escapeHtml(getProductCartId(p))}" role="group" aria-label="الكمية">
-          <button class="qty-btn qty-minus" type="button" data-cart-remove="${escapeHtml(getProductCartId(p))}" aria-label="تقليل الكمية">−</button>
-          <span class="qty-value" aria-live="polite">أضف</span>
           <button class="qty-btn qty-plus" type="button" data-cart-add="${escapeHtml(getProductCartId(p))}" data-product='${escapeHtml(JSON.stringify({id:getProductCartId(p),name_ar:p.product_name_ar||p.product_name||"صنف",name_en:p.product_name_en||"",code:p.item_code||p.sku||"",price:getProductPrice(p),old_price:toNumber(p.old_price),cat:p.category||""}))}' aria-label="إضافة إلى السلة">+</button>
+          <span class="qty-value" aria-live="polite">أضف</span>
+          <button class="qty-btn qty-minus" type="button" data-cart-remove="${escapeHtml(getProductCartId(p))}" aria-label="تقليل الكمية">−</button>
         </div>
       </div>
     </div>`;
@@ -3886,9 +3893,9 @@ function renderHeroProduct(p, cat) {
         </div>
         <div class="hp-cart-row">
           <div class="hp-qty-control" data-qty="0" data-cart-id="${cartId}" role="group" aria-label="الكمية">
-            <button class="hp-qty-btn" type="button" data-cart-remove="${cartId}" aria-label="تقليل">−</button>
-            <span class="hp-qty-val" aria-live="polite">0</span>
             <button class="hp-qty-btn" type="button" data-cart-add="${cartId}" data-product='${prodData}' aria-label="إضافة">+</button>
+            <span class="hp-qty-val" aria-live="polite">0</span>
+            <button class="hp-qty-btn" type="button" data-cart-remove="${cartId}" aria-label="تقليل">−</button>
           </div>
           <span class="hp-add-label">أضف للسلة</span>
         </div>
