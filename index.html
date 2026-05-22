@@ -178,9 +178,17 @@ aspect-ratio:auto;
   .section-strip { height: 6px; background: linear-gradient(90deg, var(--gold) 0%, var(--gold) 40%, var(--coral) 40%, var(--coral) 70%, var(--teal) 70%, var(--teal) 100%); margin: 6px 0 0; }
 
   /* HERO PRODUCT */
-  .hero-product { background: var(--sec-accent-deep, var(--teal)); color: var(--cream-light); display: grid; grid-template-columns: 360px 1fr; gap: 32px; padding: 30px; margin: 24px 0 24px; position: relative; height: 360px; }
-  .hero-product .hp-img { aspect-ratio: 1/1; height: 100%; background: repeating-linear-gradient(135deg, rgba(244,236,219,0.08) 0px, rgba(244,236,219,0.08) 18px, rgba(244,236,219,0.02) 18px, rgba(244,236,219,0.02) 36px); border: 1px solid rgba(244,236,219,0.18); display: flex; align-items: center; justify-content: center; position: relative; }
-  .hero-product .hp-text { display: flex; flex-direction: column; gap: 12px; padding: 12px 8px; }
+  .hero-product { background: var(--sec-accent-deep, var(--teal)); color: var(--cream-light); display: grid; grid-template-columns: 300px 1fr; gap: 36px; padding: 36px 36px 36px 40px; margin: 24px 0 24px; position: relative; height: auto; min-height: 340px; align-items: center; }
+  .hero-product .hp-img { aspect-ratio: 1/1; width: 100%; max-height: 280px; background: repeating-linear-gradient(135deg, rgba(244,236,219,0.08) 0px, rgba(244,236,219,0.08) 18px, rgba(244,236,219,0.02) 18px, rgba(244,236,219,0.02) 36px); border: 1px solid rgba(244,236,219,0.18); border-radius: 16px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+  .hero-product .hp-text { display: flex; flex-direction: column; gap: 12px; padding: 8px 0; }
+  /* Hero cart controls */
+  .hero-product .hp-cart-row { margin-top: 20px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .hero-product .hp-qty-control { display: flex; align-items: center; border-radius: 999px; overflow: hidden; border: 2px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.08); height: 48px; }
+  .hero-product .hp-qty-btn { flex: 0 0 48px; height: 48px; border: none; background: transparent; cursor: pointer; font-size: 24px; font-weight: 700; color: rgba(244,236,219,0.9); display: flex; align-items: center; justify-content: center; transition: background .15s; touch-action: manipulation; }
+  .hero-product .hp-qty-btn:hover { background: rgba(255,255,255,0.12); }
+  .hero-product .hp-qty-btn:active { transform: scale(.88); }
+  .hero-product .hp-qty-val { flex: 0 0 52px; text-align: center; font-family: 'Cairo', sans-serif; font-weight: 800; font-size: 20px; color: #FFD166; pointer-events: none; user-select: none; }
+  .hero-product .hp-add-label { font-family: 'Cairo', sans-serif; font-size: 15px; font-weight: 600; color: rgba(244,236,219,0.7); }
   .hero-product .hp-eyebrow { font-family: 'Roboto Mono', monospace; font-size: 14px; letter-spacing: 0.22em; color: var(--gold); text-transform: uppercase; }
   .hero-product .hp-name { font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 44px; line-height: 1.05; color: var(--cream-light); margin: 4px 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
   .hero-product .hp-desc { font-size: 20px; line-height: 1.4; color: rgba(244,236,219,0.82); max-width: 420px; }
@@ -401,14 +409,18 @@ aspect-ratio:auto;
       grid-template-columns: 1fr;
       height: auto;
       margin: 0 0 14px;
-      padding: 18px 16px;
-      gap: 14px;
+      padding: 18px 16px 22px;
+      gap: 0;
     }
     .hero-product .hp-img {
-      aspect-ratio: 16/9;
+      aspect-ratio: 1/1;
       height: auto;
-      width: 100%;
+      width: 72%;
+      max-width: 260px;
+      margin: 0 auto 16px;
+      border-radius: 16px;
     }
+    .hero-product .hp-text { padding: 0 4px; }
     .hero-product .hp-name { font-size: 26px; }
     .hero-product .hp-new { font-size: 44px; }
     .hero-product .hp-new .cur { font-size: 18px; }
@@ -417,6 +429,10 @@ aspect-ratio:auto;
     .hero-product .hp-badge { width: 80px; height: 80px; top: -12px; right: -10px; }
     .hero-product .hp-badge .l2 { font-size: 28px; }
     .hero-product .hp-badge .l1, .hero-product .hp-badge .l3 { font-size: 9px; }
+    .hero-product .hp-cart-row { margin-top: 18px; }
+    .hero-product .hp-qty-control { height: 44px; }
+    .hero-product .hp-qty-btn { flex: 0 0 44px; height: 44px; font-size: 22px; }
+    .hero-product .hp-qty-val { font-size: 18px; }
 
     /* ── PRODUCT GRIDS mobile ── */
     .grid-4, .grid-3 { grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 0 !important; }
@@ -3566,93 +3582,29 @@ const CATEGORIES_API_URL= `https://opensheet.elk.sh/${SHEET_ID}/Categories`;
 const SETTINGS_API_URL  = `https://opensheet.elk.sh/${SHEET_ID}/Magazine_Settings`;
 
 /* ================================================================
-   MAGAZINE SETTINGS — key/value from Google Sheet (optional)
-   Falls back to DEFAULT_SETTINGS if sheet missing or field empty.
+   MAGAZINE SETTINGS — كل النصوص تيجي من الشيت فقط
+   لو الخانة فاضية أو الشيت مش موجود → النص يبقى فاضي
    ================================================================ */
-const DEFAULT_SETTINGS = {
-  /* Brand */
-  magazine_page_title:    "مجلة عروض أوشن",
-  brand_name_ar:          "صيدلية أوشن",
-  brand_name_en:          "Ocean Pharmacy",
-  brand_short_ar:         "أوشن",
-  brand_ring_letter:      "O",
-  /* Cover */
-  cover_tagline:          "صحّة · جمال · عناية",
-  cover_headline_main:    "عروض",
-  cover_headline_accent:  "يونيو",
-  cover_edition_strong:   "JUNE · 2026",
-  cover_edition_sub:      "ISSUE 06 — VOL. 02",
-  cover_sub_text:         "خصم يصل إلى ٦٠٪ على أكثر من ٢٠٠ منتج",
-  cover_stat_branches:    "٨",
-  cover_badge_label_top:  "خصم يصل إلى",
-  cover_badge_number:     "60",
-  cover_badge_suffix:     "%",
-  cover_badge_label_bottom:"على ٢٠٠+ منتج",
-  /* Cover chips */
-  cover_chip_1:           "توصيل ٩٠ دقيقة",
-  cover_chip_2:           "اشتري ٢ واحصل على ١",
-  cover_chip_3:           "خصومات حتى ٦٠٪",
-  cover_chip_4:           "حصري لعملاء أوشن+",
-  /* Validity */
-  valid_from_display:     "١ يونيو",
-  valid_to_display:       "٣٠ يونيو ٢٠٢٦",
-  validity_text:          "صالحة من ١ يونيو إلى ٣٠ يونيو ٢٠٢٦",
-  cover_foot_meta:        "OCEAN PHARMACY · KSA",
-  /* TOC page */
-  toc_page_label:         "INDEX · في هذا العدد",
-  toc_page_title:         "أقسام المجلة",
-  toc_edition_label:      "JUNE 2026 · ISSUE 06",
-  toc_footer_left:        "صالحة من ١ — ٣٠ يونيو ٢٠٢٦",
-  toc_footer_right:       "OCEAN PHARMACY · JUNE ISSUE",
-  /* Toolbar */
-  toolbar_brand_label:    "صيدلية أوشن",
-  toolbar_search_ph:      "بحث عن منتج…",
-  toolbar_refresh_label:  "تحديث العروض",
-  toolbar_print_label:    "تحميل PDF",
-  /* Final page — merged with FINAL_DEFAULTS below */
-  final_page_title_ar:    "اطلب عروضك الآن",
-  final_page_subtitle_ar: "صيدلية أوشن أقرب لك",
-  final_page_headline_ar: "خلينا نوصل طلبك من أقرب فرع",
-  final_page_body_ar:     "تصفح العروض، اختر منتجاتك، وتواصل معنا ليتم توجيه طلبك إلى الفرع الأقرب لك.",
-  cta_1_text:             "اطلب من الفرع الأقرب لك",
-  cta_2_text:             "تعرّف على أقرب فرع لك",
-  cta_3_text:             "اضغط هنا للطلب عبر واتساب",
-  nearest_branch_text:    "اطلب من الفرع الأقرب لك",
-  branch_finder_text:     "تعرّف على أقرب فرع لك",
-  delivery_text:          "نوصل طلبك بسرعة من أقرب فرع متاح",
-  whatsapp_text:          "مرحبًا، أرغب بطلب عروض صيدلية أوشن",
-  footer_terms_ar:        "العروض سارية حتى نفاد الكمية. الصور لأغراض توضيحية.",
-  validity_note_ar:       "صالحة من ١ يونيو إلى ٣٠ يونيو ٢٠٢٦",
-  contact_title_ar:       "تواصل معنا",
-  /* WhatsApp & delivery */
-  customer_service_whatsapp: "966568681275",
-  delivery_radius_km:     "5",
-  /* Cart bar */
-  cart_cta_label:         "اطلب من أقرب فرع إليك",
-};
-
 let MAGAZINE_SETTINGS = {};
 
 function getSetting(key) {
   const v = MAGAZINE_SETTINGS[key];
-  if (v && String(v).trim()) return String(v).trim();
-  const d = DEFAULT_SETTINGS[key];
-  return (d !== undefined && d !== null) ? String(d) : "";
+  return (v !== undefined && v !== null) ? String(v) : "";
 }
 
 async function loadMagazineSettings() {
   try {
     const res = await fetch(SETTINGS_API_URL);
-    if (!res.ok) throw new Error("Settings sheet not found or empty (" + res.status + ")");
+    if (!res.ok) throw new Error("Settings sheet not found (" + res.status + ")");
     const rows = await res.json();
     rows.forEach(row => {
       const key   = String(row.key   || "").trim();
       const value = String(row.value || "").trim();
-      if (key && value) MAGAZINE_SETTINGS[key] = value;
+      if (key) MAGAZINE_SETTINGS[key] = value;   // خزّن حتى لو فاضية
     });
     console.log("[Settings] Loaded", Object.keys(MAGAZINE_SETTINGS).length, "keys from Magazine_Settings");
   } catch (err) {
-    console.warn("[Settings] Using defaults —", err.message);
+    console.warn("[Settings] Sheet not loaded —", err.message);
   }
 }
 
@@ -3902,7 +3854,6 @@ function renderProductCard(p) {
 function renderHeroProduct(p, cat) {
   if (!p) return "";
   const pct = (p.discount_percent||"").trim();
-  // Product image first, fallback to category hero_image
   const productUrl = imageUrlFor(p);
   let heroImgHtml;
   if (productUrl) {
@@ -3912,6 +3863,16 @@ function renderHeroProduct(p, cat) {
   } else {
     heroImgHtml = PH_HTML;
   }
+  const cartId   = escapeHtml(getProductCartId(p));
+  const prodData = escapeHtml(JSON.stringify({
+    id: getProductCartId(p),
+    name_ar: p.product_name_ar || p.product_name || "صنف",
+    name_en: p.product_name_en || "",
+    code: p.item_code || p.sku || "",
+    price: getProductPrice(p),
+    old_price: toNumber(p.old_price),
+    cat: p.category || ""
+  }));
   return `
     <div class="hero-product">
       <div class="hp-img">${heroImgHtml}</div>
@@ -3922,6 +3883,14 @@ function renderHeroProduct(p, cat) {
         <div class="hp-price">
           ${p.old_price?`<span class="hp-old">${escapeHtml(p.old_price)} ر.س</span>`:""}
           ${p.new_price?`<span class="hp-new">${escapeHtml(p.new_price)}<span class="cur">ر.س</span></span>`:""}
+        </div>
+        <div class="hp-cart-row">
+          <div class="hp-qty-control" data-qty="0" data-cart-id="${cartId}" role="group" aria-label="الكمية">
+            <button class="hp-qty-btn" type="button" data-cart-remove="${cartId}" aria-label="تقليل">−</button>
+            <span class="hp-qty-val" aria-live="polite">0</span>
+            <button class="hp-qty-btn" type="button" data-cart-add="${cartId}" data-product='${prodData}' aria-label="إضافة">+</button>
+          </div>
+          <span class="hp-add-label">أضف للسلة</span>
         </div>
       </div>
       ${pct?`<div class="hp-badge"><div class="l1">خصم</div><div class="l2">${escapeHtml(pct)}</div><div class="l3">OFFER</div></div>`:""}
@@ -4262,7 +4231,7 @@ function renderFinalPage(s) {
   };
   return `<div class="page-wrap"><section class="page"><div class="final-page">
     <div class="final-head">
-      <div class="brand-row"><span class="ring">O</span><span>${escapeHtml(getSetting('brand_name_ar')||'صيدلية أوشن')}</span></div>
+      <div class="brand-row"><span class="ring">O</span><span>${escapeHtml(getSetting('brand_name_ar'))}</span></div>
       <div class="meta">CONTACT · ${escapeHtml(s.contact_title_ar||"تواصل معنا")}</div>
     </div>
     <div class="final-title-block">
@@ -4590,10 +4559,10 @@ piObserver.observe(document.body, { childList: true, subtree: true });
    SMART CART — WhatsApp Delivery Branch Ordering System
    ================================================================ */
 
-/* ── Constants (resolved from Magazine_Settings sheet, with hardcoded fallback) ── */
+/* ── Constants (resolved from Magazine_Settings sheet only) ── */
 const DELIVERY_RADIUS_KM = Number(getSetting("delivery_radius_km")) || 5;
 const BRANCH_SHEET_URL = 'https://opensheet.elk.sh/1grir_i5EwEXcSqES2Ay2IfF0BomtZ12vp-_8ngRMa7E/Sheet1';
-const CS_WHATSAPP = getSetting("customer_service_whatsapp") || '966568681275';
+const CS_WHATSAPP = getSetting("customer_service_whatsapp");
 
 /* ── Cart State ── */
 const CART = new Map(); // id → { id, name_ar, name_en, code, price, old_price, cat, qty }
@@ -4625,10 +4594,21 @@ function cartRemove(id) {
 
 function _syncQtyControl(id) {
   const qty = CART.has(id) ? CART.get(id).qty : 0;
-  document.querySelectorAll(`.product-qty-control[data-cart-id="${CSS.escape(id)}"]`).forEach(ctrl => {
+  const escaped = CSS.escape(id);
+  // Regular product cards
+  document.querySelectorAll(`.product-qty-control[data-cart-id="${escaped}"]`).forEach(ctrl => {
     ctrl.dataset.qty = qty;
     const valEl = ctrl.querySelector('.qty-value');
     if (valEl) valEl.textContent = qty === 0 ? 'أضف' : qty;
+  });
+  // Hero product controls
+  document.querySelectorAll(`.hp-qty-control[data-cart-id="${escaped}"]`).forEach(ctrl => {
+    ctrl.dataset.qty = qty;
+    const valEl = ctrl.querySelector('.hp-qty-val');
+    if (valEl) valEl.textContent = qty;
+    // Dim minus when zero
+    const minusBtn = ctrl.querySelector('[data-cart-remove]');
+    if (minusBtn) minusBtn.style.opacity = qty === 0 ? '0.3' : '1';
   });
 }
 
@@ -5056,84 +5036,86 @@ function renderCoverAndStaticSections() {
   /* ── Cover page ── */
   const coverMast = document.querySelector('.cover-mast');
   if (coverMast) {
-    coverMast.innerHTML = `<span class="ring">${escapeHtml(getSetting('brand_ring_letter'))}</span><span>${escapeHtml(getSetting('brand_short_ar'))}</span>`;
+    const r = getSetting('brand_ring_letter'), s = getSetting('brand_short_ar');
+    if (r || s) coverMast.innerHTML = `<span class="ring">${escapeHtml(r)}</span><span>${escapeHtml(s)}</span>`;
   }
   const coverEdition = document.querySelector('.cover-edition');
   if (coverEdition) {
-    coverEdition.innerHTML = `<strong>${escapeHtml(getSetting('cover_edition_strong'))}</strong>${escapeHtml(getSetting('cover_edition_sub'))}`;
+    const es = getSetting('cover_edition_strong'), sub = getSetting('cover_edition_sub');
+    if (es || sub) coverEdition.innerHTML = `<strong>${escapeHtml(es)}</strong>${escapeHtml(sub)}`;
   }
   const coverTagline = document.querySelector('.cover-tagline span');
-  if (coverTagline) coverTagline.textContent = getSetting('cover_tagline');
+  if (coverTagline) { const v = getSetting('cover_tagline'); if (v) coverTagline.textContent = v; }
 
   const coverSub = document.querySelector('.cover-sub');
-  if (coverSub) coverSub.innerHTML = escapeHtml(getSetting('cover_sub_text')).replace(/٦٠٪|60%/g, '<strong>٦٠٪</strong>').replace(/٢٠٠/g, '<strong>٢٠٠</strong>');
+  if (coverSub) { const v = getSetting('cover_sub_text'); if (v) coverSub.innerHTML = escapeHtml(v).replace(/٦٠٪|60%/g, '<strong>٦٠٪</strong>').replace(/٢٠٠/g, '<strong>٢٠٠</strong>'); }
 
   const coverStatBranches = document.querySelector('.cover-stat-row .stat:last-child .n');
-  if (coverStatBranches) coverStatBranches.textContent = getSetting('cover_stat_branches');
+  if (coverStatBranches) { const v = getSetting('cover_stat_branches'); if (v) coverStatBranches.textContent = v; }
 
   /* Burst badge */
   const b1 = document.querySelector('.cover-burst .b1');
   const b2 = document.querySelector('.cover-burst .b2');
   const b3 = document.querySelector('.cover-burst .b3');
-  if (b1) b1.textContent = getSetting('cover_badge_label_top');
-  if (b2) b2.innerHTML   = `${escapeHtml(getSetting('cover_badge_number'))}<sup>${escapeHtml(getSetting('cover_badge_suffix'))}</sup>`;
-  if (b3) b3.textContent = getSetting('cover_badge_label_bottom');
+  if (b1) { const v = getSetting('cover_badge_label_top');    if (v) b1.textContent = v; }
+  if (b2) { const n = getSetting('cover_badge_number'), sf = getSetting('cover_badge_suffix'); if (n || sf) b2.innerHTML = `${escapeHtml(n)}<sup>${escapeHtml(sf)}</sup>`; }
+  if (b3) { const v = getSetting('cover_badge_label_bottom'); if (v) b3.textContent = v; }
 
   /* Cover chips */
   const chips = document.querySelectorAll('.cover-callouts .chip');
   const chipSettings = ['cover_chip_1','cover_chip_2','cover_chip_3','cover_chip_4'];
   chips.forEach((chip, i) => {
     if (chipSettings[i]) {
+      const val = getSetting(chipSettings[i]);
+      if (!val) return;                         // فاضي → سيب الـ chip زي ما هو
       const icn = chip.querySelector('.icn');
       const icnHtml = icn ? icn.outerHTML : '';
-      chip.innerHTML = icnHtml + escapeHtml(getSetting(chipSettings[i]));
+      chip.innerHTML = icnHtml + escapeHtml(val);
     }
   });
 
   /* Cover headline */
   const hl = document.querySelector('.cover-headline');
-  if (hl) hl.innerHTML = `<span>${escapeHtml(getSetting('cover_headline_main'))}</span> <span class="accent">${escapeHtml(getSetting('cover_headline_accent'))}</span>`;
+  if (hl) { const m = getSetting('cover_headline_main'), a = getSetting('cover_headline_accent'); if (m || a) hl.innerHTML = `<span>${escapeHtml(m)}</span> <span class="accent">${escapeHtml(a)}</span>`; }
 
   /* Cover footer */
   const coverFootDates = document.querySelector('.cover-foot .dates');
   if (coverFootDates) {
-    const dot = coverFootDates.querySelector('.dot');
-    const dotHtml = dot ? dot.outerHTML : '<span class="dot"></span>';
-    coverFootDates.innerHTML = dotHtml + escapeHtml(getSetting('validity_text'));
+    const v = getSetting('validity_text');
+    if (v) { const dot = coverFootDates.querySelector('.dot'); const dotHtml = dot ? dot.outerHTML : '<span class="dot"></span>'; coverFootDates.innerHTML = dotHtml + escapeHtml(v); }
   }
   const coverFootMeta = document.querySelector('.cover-foot .meta');
-  if (coverFootMeta) coverFootMeta.textContent = getSetting('cover_foot_meta');
+  if (coverFootMeta) { const v = getSetting('cover_foot_meta'); if (v) coverFootMeta.textContent = v; }
 
   /* ── TOC page static text ── */
   const tocMono = document.querySelector('.page-head .cat-mono');
-  if (tocMono) tocMono.textContent = getSetting('toc_page_label');
+  if (tocMono) { const v = getSetting('toc_page_label'); if (v) tocMono.textContent = v; }
   const tocH1 = document.querySelector('.page-head h1');
-  if (tocH1) tocH1.textContent = getSetting('toc_page_title');
+  if (tocH1) { const v = getSetting('toc_page_title'); if (v) tocH1.textContent = v; }
   const tocWordmark = document.querySelector('.page-head .h-right .wordmark');
-  if (tocWordmark) tocWordmark.innerHTML = `<span class="wordmark-mark">${escapeHtml(getSetting('brand_ring_letter'))}</span><span>${escapeHtml(getSetting('brand_name_ar'))}</span>`;
+  if (tocWordmark) { const r = getSetting('brand_ring_letter'), n = getSetting('brand_name_ar'); if (r || n) tocWordmark.innerHTML = `<span class="wordmark-mark">${escapeHtml(r)}</span><span>${escapeHtml(n)}</span>`; }
   const tocEd = document.querySelector('.page-head .h-right .ed');
-  if (tocEd) tocEd.textContent = getSetting('toc_edition_label');
+  if (tocEd) { const v = getSetting('toc_edition_label'); if (v) tocEd.textContent = v; }
   const tocFootLeft  = document.querySelector('.page-foot span:first-child');
-  if (tocFootLeft)  tocFootLeft.textContent  = getSetting('toc_footer_left');
+  if (tocFootLeft)  { const v = getSetting('toc_footer_left');  if (v) tocFootLeft.textContent  = v; }
   const tocFootRight = document.querySelector('.page-foot span:last-child');
-  if (tocFootRight) tocFootRight.textContent = getSetting('toc_footer_right');
+  if (tocFootRight) { const v = getSetting('toc_footer_right'); if (v) tocFootRight.textContent = v; }
 
   /* ── Toolbar ── */
   const toolbarBrand = document.querySelector('.toolbar .brand span:last-child');
-  if (toolbarBrand) toolbarBrand.textContent = getSetting('toolbar_brand_label');
+  if (toolbarBrand) { const v = getSetting('toolbar_brand_label'); if (v) toolbarBrand.textContent = v; }
   const searchInput = document.getElementById('search-input');
-  if (searchInput) searchInput.placeholder = getSetting('toolbar_search_ph');
+  if (searchInput) { const v = getSetting('toolbar_search_ph'); if (v) searchInput.placeholder = v; }
   const refreshBtn = document.getElementById('refresh-btn');
-  if (refreshBtn) { const ic = refreshBtn.querySelector('.ic'); refreshBtn.innerHTML = (ic?ic.outerHTML:'<span class="ic">⟳</span>') + `<span>${escapeHtml(getSetting('toolbar_refresh_label'))}</span>`; }
+  if (refreshBtn) { const v = getSetting('toolbar_refresh_label'); if (v) { const ic = refreshBtn.querySelector('.ic'); refreshBtn.innerHTML = (ic?ic.outerHTML:'<span class="ic">⟳</span>') + `<span>${escapeHtml(v)}</span>`; } }
   const printBtn = document.getElementById('print-btn');
-  if (printBtn)   { const ic = printBtn.querySelector('.ic');   printBtn.innerHTML   = (ic?ic.outerHTML:'<span class="ic">⎙</span>') + `<span>${escapeHtml(getSetting('toolbar_print_label'))}</span>`; }
+  if (printBtn)   { const v = getSetting('toolbar_print_label');   if (v) { const ic = printBtn.querySelector('.ic');   printBtn.innerHTML   = (ic?ic.outerHTML:'<span class="ic">⎙</span>') + `<span>${escapeHtml(v)}</span>`; } }
 
   /* ── Cart bar CTA label ── */
   const cartCta = document.getElementById('smart-cart-cta');
   if (cartCta) {
-    const waIc = cartCta.querySelector('.wa-ic');
-    const waHtml = waIc ? waIc.outerHTML : '';
-    cartCta.innerHTML = waHtml + escapeHtml(getSetting('cart_cta_label'));
+    const v = getSetting('cart_cta_label');
+    if (v) { const waIc = cartCta.querySelector('.wa-ic'); const waHtml = waIc ? waIc.outerHTML : ''; cartCta.innerHTML = waHtml + escapeHtml(v); }
   }
 }
 
