@@ -3648,6 +3648,75 @@ body.cart-bar-open { padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px
     padding:12px 14px !important;
   }
 }
+
+
+/* ================================================================
+   HERO QTY MINUS FIX — force - 0 + visible and clickable
+   ================================================================ */
+.hero-product .hp-cart-row{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:14px !important;
+  flex-wrap:nowrap !important;
+  direction:rtl !important;
+}
+.hero-product .hp-qty-control{
+  direction:ltr !important;
+  display:grid !important;
+  grid-template-columns:48px minmax(44px,1fr) 48px !important;
+  align-items:center !important;
+  justify-items:center !important;
+  min-width:152px !important;
+  width:152px !important;
+  flex:0 0 152px !important;
+  overflow:hidden !important;
+}
+.hero-product .hp-qty-btn{
+  position:relative !important;
+  z-index:5 !important;
+  width:48px !important;
+  min-width:48px !important;
+  height:48px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  opacity:1 !important;
+  visibility:visible !important;
+  pointer-events:auto !important;
+  touch-action:manipulation !important;
+}
+.hero-product .hp-minus{ grid-column:1 !important; order:1 !important; }
+.hero-product .hp-qty-val{ grid-column:2 !important; order:2 !important; display:flex !important; align-items:center !important; justify-content:center !important; min-width:44px !important; }
+.hero-product .hp-plus{ grid-column:3 !important; order:3 !important; }
+.hero-product .hp-qty-control [data-cart-remove]{ opacity:1 !important; }
+@media (max-width:700px){
+  .hero-product .hp-cart-row{
+    flex-direction:row !important;
+    justify-content:space-between !important;
+    width:100% !important;
+  }
+  .hero-product .hp-qty-control{
+    grid-template-columns:46px minmax(42px,1fr) 46px !important;
+    min-width:150px !important;
+    width:150px !important;
+    flex:0 0 150px !important;
+    height:48px !important;
+  }
+  .hero-product .hp-qty-btn{
+    width:46px !important;
+    min-width:46px !important;
+    height:48px !important;
+    font-size:24px !important;
+  }
+  .hero-product .hp-add-label{
+    flex:1 1 auto !important;
+    min-width:0 !important;
+    white-space:nowrap !important;
+    text-align:right !important;
+    justify-content:flex-start !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -4091,9 +4160,9 @@ function renderHeroProduct(p, cat) {
         </div>
         <div class="hp-cart-row">
           <div class="hp-qty-control" data-qty="0" data-cart-id="${cartId}" role="group" aria-label="الكمية">
-            <button class="hp-qty-btn" type="button" data-cart-add="${cartId}" data-product='${prodData}' aria-label="إضافة">+</button>
+            <button class="hp-qty-btn hp-minus" type="button" data-cart-remove="${cartId}" aria-label="تقليل الكمية">−</button>
             <span class="hp-qty-val" aria-live="polite">0</span>
-            <button class="hp-qty-btn" type="button" data-cart-remove="${cartId}" aria-label="تقليل">−</button>
+            <button class="hp-qty-btn hp-plus" type="button" data-cart-add="${cartId}" data-product='${prodData}' aria-label="زيادة الكمية">+</button>
           </div>
           <span class="hp-add-label">أضف للسلة</span>
         </div>
@@ -4813,7 +4882,7 @@ function _syncQtyControl(id) {
     if (valEl) valEl.textContent = qty;
     // Dim minus when zero
     const minusBtn = ctrl.querySelector('[data-cart-remove]');
-    if (minusBtn) minusBtn.style.opacity = qty === 0 ? '0.3' : '1';
+    if (minusBtn) minusBtn.style.opacity = '1';
   });
 }
 
@@ -4921,17 +4990,50 @@ function getNearestDeliveryBranch(branchesWithDist) {
 }
 
 /* ── WhatsApp URL builder ── */
-function buildWhatsappUrl(rawWhatsapp, message) {
+function normalizeWhatsappPhone(rawWhatsapp) {
+  let raw = String(rawWhatsapp || '').trim();
+  if (!raw) raw = String(CS_WHATSAPP || getSetting('whatsapp_number') || getSetting('contact_whatsapp') || '').trim();
+
+  // Accept normal numbers or full WhatsApp links from Google Sheet / Settings
   let phone = '';
-  const raw = String(rawWhatsapp || '').trim();
-  if (!raw) { phone = CS_WHATSAPP; }
-  else if (/^https?:\/\/(wa\.me|api\.whatsapp\.com)/i.test(raw)) {
-    const m = raw.match(/(\d{7,15})/);
-    phone = m ? m[1] : CS_WHATSAPP;
-  } else {
-    phone = raw.replace(/[^0-9]/g, '') || CS_WHATSAPP;
+  const linkMatch = raw.match(/(?:phone=|wa\.me\/|\/send\/)(\+?\d{7,15})/i) || raw.match(/(\+?\d{7,15})/);
+  if (linkMatch) phone = linkMatch[1];
+  else phone = raw.replace(/[^0-9]/g, '');
+
+  phone = String(phone || '').replace(/[^0-9]/g, '');
+  if (phone.startsWith('00')) phone = phone.slice(2);
+
+  // Saudi mobile normalization: 05xxxxxxxx → 9665xxxxxxxx, 5xxxxxxxx → 9665xxxxxxxx
+  if (/^05\d{8}$/.test(phone)) phone = '966' + phone.slice(1);
+  else if (/^5\d{8}$/.test(phone)) phone = '966' + phone;
+
+  return phone;
+}
+
+function buildWhatsappUrl(rawWhatsapp, message) {
+  const phone = normalizeWhatsappPhone(rawWhatsapp);
+  const encoded = encodeURIComponent(message || '');
+  if (!phone) return '';
+  // api.whatsapp.com is more reliable than wa.me inside iOS/Android browsers and webviews
+  return `https://api.whatsapp.com/send?phone=${phone}&text=${encoded}`;
+}
+
+function openWhatsappUrl(url) {
+  if (!url) {
+    showOrderToast('رقم الواتساب غير موجود في الإعدادات أو بيانات الفرع');
+    return;
   }
-  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+
+  // Mobile Safari/Chrome often blocks window.open after async geolocation.
+  // Navigating the same tab is the most reliable way to open WhatsApp on mobile.
+  const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  if (isMobile) {
+    window.location.href = url;
+    return;
+  }
+
+  const win = window.open(url, '_blank', 'noopener,noreferrer');
+  if (!win) window.location.href = url;
 }
 
 /* ── Message builder ── */
@@ -4970,7 +5072,7 @@ function buildCartMessage({ location, branch, outsideCoverage, noLocation }) {
 function openWhatsAppOrder(branch, location) {
   const msg = buildCartMessage({ location, branch });
   const url = buildWhatsappUrl(branch.whatsapp, msg);
-  window.open(url, '_blank', 'noopener');
+  openWhatsappUrl(url);
 }
 
 /* ── Toast ── */
@@ -5024,7 +5126,7 @@ function buildPickupMessage({ location, branch }) {
 function openWhatsAppPickupOrder(branch, location) {
   const msg = buildPickupMessage({ location, branch });
   const url = buildWhatsappUrl(branch && branch.whatsapp ? branch.whatsapp : CS_WHATSAPP, msg);
-  window.open(url, '_blank', 'noopener');
+  openWhatsappUrl(url);
 }
 
 /* ── Out of coverage modal — pickup-first flow ── */
@@ -5086,7 +5188,7 @@ function showOutOfCoverageModal(branchOrMsg, location, pickupBranch) {
   if (supportBtn) {
     supportBtn.addEventListener('click', () => {
       const msg = buildCartMessage({ location, branch: pickup, outsideCoverage: true });
-      window.open(buildWhatsappUrl(CS_WHATSAPP, msg), '_blank', 'noopener');
+      openWhatsappUrl(buildWhatsappUrl(CS_WHATSAPP, msg));
       closeOrderModal();
     });
   }
@@ -5124,7 +5226,7 @@ function showLocationDeniedModal() {
     </div>`;
   document.getElementById('ld-no-loc-btn').addEventListener('click', () => {
     const msg = buildCartMessage({ noLocation: true });
-    window.open(buildWhatsappUrl(CS_WHATSAPP, msg), '_blank', 'noopener');
+    openWhatsappUrl(buildWhatsappUrl(CS_WHATSAPP, msg));
     closeOrderModal();
   });
   document.getElementById('ld-retry-btn').addEventListener('click', () => {
