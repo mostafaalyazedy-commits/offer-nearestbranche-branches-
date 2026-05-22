@@ -1,7 +1,7 @@
 <!DOCTYPE html><html lang="ar" dir="rtl"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>مجلة عروض صيدلية المحيط</title>
+<title>مجلة عروض أوشن</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -3352,12 +3352,31 @@ body.cart-bar-open { padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px
   box-shadow: 0 6px 20px rgba(37,211,102,.3);
 }
 .order-modal-actions .oma-btn.wa-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(37,211,102,.4); }
-.order-modal-actions .oma-btn.maps-btn {
-  background: rgba(255,255,255,.08);
-  color: var(--cream-light);
-  border: 1px solid rgba(255,255,255,.14);
+/* Pickup — primary green CTA */
+.order-modal-actions .oma-btn.pickup-btn {
+  background: linear-gradient(135deg, #25D366, #128C7E);
+  color: white;
+  font-size: 16px;
+  box-shadow: 0 6px 22px rgba(37,211,102,.35);
 }
-.order-modal-actions .oma-btn.maps-btn:hover { background: rgba(255,255,255,.14); }
+.order-modal-actions .oma-btn.pickup-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(37,211,102,.48); }
+.order-modal-actions .oma-btn.pickup-btn:active { transform: scale(.96); }
+/* Maps — blue outline */
+.order-modal-actions .oma-btn.maps-btn {
+  background: rgba(102,217,239,.10);
+  color: #66D9EF;
+  border: 1px solid rgba(102,217,239,.30);
+}
+.order-modal-actions .oma-btn.maps-btn:hover { background: rgba(102,217,239,.18); border-color: rgba(102,217,239,.5); }
+/* Support — muted small */
+.order-modal-actions .oma-btn.support-btn {
+  background: transparent;
+  color: rgba(244,236,219,.48);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 18px;
+}
+.order-modal-actions .oma-btn.support-btn:hover { color: rgba(244,236,219,.72); }
 .order-modal-actions .oma-btn.close-btn {
   background: transparent;
   color: rgba(244,236,219,.5);
@@ -4686,59 +4705,107 @@ function closeOrderModal() {
 }
 
 /* ── Out of coverage modal ── */
-function showOutOfCoverageModal(branchOrMsg, location) {
+/* ── Nearest branch (any, not just delivery) for pickup fallback ── */
+function getNearestAnyBranch(branchesWithDist) {
+  return [...branchesWithDist]
+    .filter(b => b.dist !== null && b.coord_source === 'sheet')
+    .sort((a, b) => a.dist - b.dist)[0] || null;
+}
+
+/* ── Pickup WhatsApp message ── */
+function buildPickupMessage({ location, branch }) {
+  const lines = ['السلام عليكم، أرغب بطلب الأصناف التالية من عروض أوشن:\n'];
+  let i = 1;
+  for (const item of CART.values()) {
+    lines.push(`${i}) ${item.name_ar}${item.name_en ? ' — ' + item.name_en : ''}`);
+    if (item.code) lines.push(`   الكود: ${item.code}`);
+    lines.push(`   الكمية: ${item.qty}`);
+    if (item.price > 0) lines.push(`   السعر: ${item.price.toFixed(2)} ر.س`);
+    lines.push('');
+    i++;
+  }
+  const total = [...CART.values()].reduce((s, v) => s + v.price * v.qty, 0);
+  lines.push(`الإجمالي التقريبي: ${total.toFixed(2)} ر.س\n`);
+  if (location) lines.push(`موقعي:\nhttps://www.google.com/maps?q=${location.lat},${location.lng}\n`);
+  if (branch) {
+    lines.push(`أقرب فرع للاستلام:\n${branch.store_code ? branch.store_code + ' — ' : ''}${branch.business_name}`);
+    if (branch.dist !== null) lines.push(`المسافة التقريبية: ${_formatDist(branch.dist)}`);
+  }
+  lines.push('\nملاحظة:\nالطلب خارج نطاق التوصيل، وأرغب بالاستلام من الفرع.');
+  lines.push('\nفضلاً تأكيد توفر الأصناف وتجهيز الطلب للاستلام.');
+  return lines.join('\n');
+}
+
+function openWhatsAppPickupOrder(branch, location) {
+  const msg = buildPickupMessage({ location, branch });
+  const url = buildWhatsappUrl(branch && branch.whatsapp ? branch.whatsapp : CS_WHATSAPP, msg);
+  window.open(url, '_blank', 'noopener');
+}
+
+/* ── Out of coverage modal — pickup-first flow ── */
+function showOutOfCoverageModal(branchOrMsg, location, pickupBranch) {
   const root = document.getElementById('order-modal-root');
   if (!root) return;
-  const isNoCoords = typeof branchOrMsg === 'string';
-  const branch = isNoCoords ? null : branchOrMsg;
-  const titleText = 'خارج نطاق التوصيل';
-  const msgText = isNoCoords
-    ? branchOrMsg
-    : 'نعتذر، موقعك الحالي خارج نطاق خدمة التوصيل حالياً.';
 
-  const branchInfoHtml = branch ? `
+  const isNoCoords = typeof branchOrMsg === 'string';
+  // pickupBranch: branch used for the pickup CTA (may differ from delivery nearest)
+  const pickup = pickupBranch || (isNoCoords ? null : branchOrMsg);
+
+  const branchInfoHtml = pickup ? `
     <div class="ocm-branch-info">
-      <strong>أقرب فرع توصيل إليك:</strong><br>
-      ${branch.store_code ? branch.store_code + ' — ' : ''}${escapeHtml(branch.business_name)}<br>
-      <strong>المسافة التقريبية:</strong> ${_formatDist(branch.dist)}
+      <strong>أقرب فرع للاستلام:</strong><br>
+      ${pickup.store_code ? escapeHtml(pickup.store_code) + ' — ' : ''}${escapeHtml(pickup.business_name)}<br>
+      <strong>المسافة التقريبية:</strong> ${_formatDist(pickup.dist)}
     </div>` : '';
+
+  const mapsUrl = pickup
+    ? (pickup.maps || `https://www.google.com/maps?q=${pickup.lat},${pickup.lng}`)
+    : null;
+
+  const WA_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`;
 
   root.innerHTML = `
     <div class="order-modal-backdrop" id="order-modal-backdrop" role="dialog" aria-modal="true" aria-label="خارج نطاق التوصيل">
       <div class="order-coverage-modal">
         <div class="ocm-handle" aria-hidden="true"></div>
-        <div class="ocm-icon">📍</div>
-        <div class="ocm-title">${escapeHtml(titleText)}</div>
-        <div class="ocm-msg">${escapeHtml(msgText)}</div>
+        <div class="ocm-icon">🏪</div>
+        <div class="ocm-title">خارج نطاق التوصيل</div>
+        <div class="ocm-msg">موقعك الحالي خارج نطاق خدمة التوصيل حالياً، لكن يمكنك استلام طلبك من أقرب فرع.</div>
         ${branchInfoHtml}
         <div class="order-modal-actions">
-          <button class="oma-btn wa-btn" id="ocm-support-btn" type="button">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            تواصل مع خدمة العملاء
-          </button>
-          ${branch && branch.maps ? `<button class="oma-btn maps-btn" id="ocm-maps-btn" type="button">🗺️ عرض أقرب فرع على الخريطة</button>` : ''}
+          ${pickup ? `<button class="oma-btn pickup-btn" id="ocm-pickup-btn" type="button">${WA_SVG} استلام من أقرب فرع</button>` : ''}
+          ${mapsUrl ? `<button class="oma-btn maps-btn" id="ocm-maps-btn" type="button">🗺️ عرض الفرع على الخريطة</button>` : ''}
+          <button class="oma-btn support-btn" id="ocm-support-btn" type="button">${WA_SVG} تواصل مع خدمة العملاء</button>
           <button class="oma-btn close-btn" id="ocm-close-btn" type="button">إغلاق</button>
         </div>
       </div>
     </div>`;
 
-  // Wire buttons
-  const supportBtn = document.getElementById('ocm-support-btn');
-  if (supportBtn) {
-    supportBtn.addEventListener('click', () => {
-      const msg = buildCartMessage({ location, branch, outsideCoverage: true });
-      const url = buildWhatsappUrl(CS_WHATSAPP, msg);
-      window.open(url, '_blank', 'noopener');
+  // Pickup CTA
+  const pickupBtn = document.getElementById('ocm-pickup-btn');
+  if (pickupBtn && pickup) {
+    pickupBtn.addEventListener('click', () => {
+      openWhatsAppPickupOrder(pickup, location);
       closeOrderModal();
     });
   }
+
+  // Maps button
   const mapsBtn = document.getElementById('ocm-maps-btn');
-  if (mapsBtn && branch) {
-    mapsBtn.addEventListener('click', () => {
-      const mapsUrl = branch.maps || `https://www.google.com/maps?q=${branch.lat},${branch.lng}`;
-      window.open(mapsUrl, '_blank', 'noopener');
+  if (mapsBtn && mapsUrl) {
+    mapsBtn.addEventListener('click', () => window.open(mapsUrl, '_blank', 'noopener'));
+  }
+
+  // Customer service button
+  const supportBtn = document.getElementById('ocm-support-btn');
+  if (supportBtn) {
+    supportBtn.addEventListener('click', () => {
+      const msg = buildCartMessage({ location, branch: pickup, outsideCoverage: true });
+      window.open(buildWhatsappUrl(CS_WHATSAPP, msg), '_blank', 'noopener');
+      closeOrderModal();
     });
   }
+
   const closeBtn = document.getElementById('ocm-close-btn');
   if (closeBtn) closeBtn.addEventListener('click', closeOrderModal);
 
@@ -4814,19 +4881,23 @@ async function handleOrderClick() {
 
       const branchesWithDist = computeBranchDistances(lat, lng);
       const nearest = getNearestDeliveryBranch(branchesWithDist);
+      const nearestAny = getNearestAnyBranch(branchesWithDist);
 
-      if (!nearest) {
-        // No delivery branch has coordinates at all
-        showOutOfCoverageModal('لا يمكن تحديد أقرب فرع توصيل حالياً، فضلاً تواصل معنا عبر واتساب.', location);
+      // Pickup branch: prefer nearest delivery branch (even if outside radius), fall back to any branch with coords
+      const pickupBranch = nearest || nearestAny;
+
+      if (!nearest && !nearestAny) {
+        // No branch at all has coordinates
+        showOutOfCoverageModal('لا يمكن تحديد أقرب فرع حالياً، فضلاً تواصل معنا عبر واتساب.', location, null);
         return;
       }
 
-      if (nearest.dist <= DELIVERY_RADIUS_KM) {
-        // ✅ Within radius → open WhatsApp order
+      if (nearest && nearest.dist <= DELIVERY_RADIUS_KM) {
+        // ✅ Within delivery radius → open WhatsApp delivery order
         openWhatsAppOrder(nearest, location);
       } else {
-        // ❌ Outside radius → show coverage modal
-        showOutOfCoverageModal(nearest, location);
+        // ❌ Outside radius → show pickup modal
+        showOutOfCoverageModal(nearest, location, pickupBranch);
       }
     },
     err => {
