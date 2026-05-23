@@ -4008,8 +4008,8 @@ function productImageBlock(p) {
 function premiumCategoryTag(p) {
   const raw = String(p.category_ar || p.category_name_ar || p.category || p.category_key || p.section || "").trim().toLowerCase();
   const name = (p.category_ar || p.category_name_ar || p.category || p.section || "").trim();
-  if (/baby|child|infant|kids|اطفال|أطفال|طفل|حليب/.test(raw)) return "حليب أطفال";
-  if (/diaper|حفاض/.test(raw)) return "حفاضات";
+  if (/baby|child|infant|kids|اطفال|أطفال|طفل|حليب/.test(raw)) return "للأطفال";
+  if (/diaper|حفاض/.test(raw)) return "للأطفال";
   if (/vitamin|supplement|فيتامين|مكمل/.test(raw)) return "مكمل غذائي";
   if (/skin|beauty|care|بشرة|تجميل|عناية/.test(raw)) return "عناية";
   return name || "عرض خاص";
