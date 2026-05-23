@@ -4425,7 +4425,10 @@ function updateCoverImage() {
     const url = best.cover_image || best.hero_image;
     img.src = url;
     img.style.display = "";
-    img.onerror = function() { this.style.display = "none"; };
+   img.onerror = function() { 
+     console.error("Cover image failed:", this.src);
+     this.style.display = "none"; 
+   };
   }
 }
 
@@ -6091,6 +6094,33 @@ document.addEventListener("keydown", function tocKeyHandler(e) {
   e.preventDefault();
   tile.click();
 });
-
 </script>
+  
+  <script>
+/* FIX: Cover image using lh3 */
+(function() {
+  var _orig = window.updateCoverImage;
+  window.updateCoverImage = function() {
+    var img = document.getElementById("cover-hero-img");
+    if (!img) return;
+    var cats = (window.ORDERED_CATS || []).filter(function(c){ return c.cover_image || c.hero_image; });
+    var best = cats.find(function(c){ return c.cover_image; }) || cats.find(function(c){ return c.hero_image; });
+    if (!best) return;
+    var rawUrl = best.cover_image || best.hero_image;
+    var driveId = (typeof extractDriveId === "function") ? extractDriveId(rawUrl) : null;
+    var url = driveId ? "https://lh3.googleusercontent.com/d/" + driveId : rawUrl;
+    img.src = url;
+    img.style.display = "";
+    img.onerror = function() {
+      if (driveId && !this._fb) {
+        this._fb = 1;
+        this.src = "https://drive.google.com/uc?export=view&id=" + driveId;
+      } else {
+        this.style.display = "none";
+      }
+    };
+  };
+})();
+</script>
+  
 </body></html>
